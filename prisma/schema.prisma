@@ -1,0 +1,209 @@
+// prisma/schema.prisma
+
+// generator client {
+//     provider = "prisma-client-js"
+// }
+
+generator client {
+    provider        = "prisma-client-js"
+    output          = "../generated/prisma"
+    previewFeatures = ["fullTextSearchPostgres"]
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+/**
+ * ============================================================
+ * ENUMS
+ * ==============================================================
+ */
+
+enum AuthType {
+    GOOGLE
+    APPLE
+    EMAIL_OTP
+    PHONE_OTP
+    EMAIL_PW
+}
+
+enum RoleName {
+    OWNER
+    ADMIN
+    OPERATOR
+}
+
+enum Status {
+    ACTIVE
+    INACTIVE
+}
+
+enum SubscriptionStatus {
+    PENDING
+    ACTIVE
+    PAUSED
+    UPGRADED
+    CANCELLED
+    EXPIRED
+    INCOMPLETE
+}
+
+enum SubscriptionSource {
+    RAZORPAY
+    ADMIN
+}
+
+enum RazorpayEntityType {
+    SUBSCRIPTION
+    PAYMENT
+    INVOICE
+}
+
+enum SubscriptionCycle {
+    WEEKLY
+    MONTHLY
+    QUARTERLY
+    YEARLY
+}
+
+/**
+ * ============================================================
+ * AUTH MODELS (ADDED)
+ * ==============================================================
+ */
+
+model UserSession {
+    id                      BigInt    @id @default(autoincrement())
+    session_id              String    @unique
+    user_id                 BigInt
+    user                    User      @relation(fields: [user_id], references: [id])
+    org_id                  BigInt?
+    device_info             Json?
+    ip_address              String?
+    refresh_token_hash      String
+    refresh_token_encrypted String?
+    created_at              DateTime  @default(now())
+    expires_at              DateTime
+    last_used_at            DateTime?
+    revoked                 Boolean   @default(false)
+
+    @@index([session_id, user_id, org_id, ip_address, revoked])
+    @@map("tbl_user_session")
+}
+
+model AuthRateLimit {
+    id            BigInt    @id @default(autoincrement())
+    identifier    String
+    ip_address    String
+    attempts      Int       @default(0)
+    penalty_level Int       @default(0)
+    block_until   DateTime?
+    created_at    DateTime  @default(now())
+    updated_at    DateTime  @updatedAt
+
+    @@unique([identifier, ip_address])
+    @@index([identifier, ip_address])
+    @@map("tbl_auth_rate_limit")
+}
+
+/**
+ * ============================================================
+ * ROLE
+ * ==============================================================
+ */
+
+model Role {
+    id          BigInt   @id @default(autoincrement())
+    name        RoleName @unique
+    description String?
+    created_at  DateTime @default(now())
+    users       User[]
+
+    @@index([name])
+    @@map("tbl_role")
+}
+
+/**
+ * ============================================================
+ * USER
+ * ==============================================================
+ */
+
+model AdminSettings {
+    id         BigInt   @id @default(autoincrement()) @db.BigInt
+    title      String
+    metadata   Json
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt()
+
+    @@index([title])
+    @@map("tbl_admin_settings")
+}
+
+model User {
+    id                BigInt             @id @default(autoincrement())
+    first_name        String?
+    last_name         String?
+    email             String?            @unique
+    password          String?            @db.Text()
+    role_id           BigInt
+    role              Role               @relation(fields: [role_id], references: [id])
+    phone_no          String?
+    image             String?
+    dob               DateTime?
+    auth_method       AuthType
+    provider_id       String?            @unique
+    status            Status             @default(ACTIVE)
+    refresh_token     String?
+    reset_token       String?            @unique
+    reset_token_exp   DateTime?
+    is_temporary      Boolean            @default(false)
+    is_deleted        Boolean            @default(false)
+    created_at        DateTime           @default(now())
+    updated_at        DateTime           @updatedAt
+    invalidatedTokens InvalidatedToken[]
+    userFCMTokens     UserFCMToken[]
+    sessions          UserSession[]
+
+    @@index([first_name, last_name, email, phone_no, auth_method])
+    @@map("tbl_user")
+}
+
+model OTP {
+    id             String    @id @default(uuid())
+    credential     String    @unique
+    otp            String
+    limit          Int       @default(0)
+    is_email       Boolean   @default(true)
+    restrictedTime DateTime?
+    created_at     DateTime  @default(now())
+    expires_at     DateTime
+    updated_at     DateTime  @updatedAt()
+
+    @@index([credential])
+    @@map("tbl_otp")
+}
+
+model InvalidatedToken {
+    id         String   @id @default(uuid())
+    token      String
+    expires_at DateTime
+    user_id    BigInt
+    user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+    @@index([user_id])
+    @@map("tbl_invalidated_tokens")
+}
+
+model UserFCMToken {
+    id         BigInt   @id @default(autoincrement()) @db.BigInt
+    user_id    BigInt
+    user       User     @relation(fields: [user_id], references: [id])
+    token      String
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+
+    @@map("tbl_user_fcm_tokens")
+}
