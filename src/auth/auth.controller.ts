@@ -93,6 +93,8 @@ export class AuthController {
             const resData = new ApiResponse(tokens, 'Tokens refreshed successfully');
             return res.status(HttpStatus.OK).json({ data: resData });
         } catch (error: any) {
+            console.log("Error", error);
+
             if (error.status && error.response) {
                 return res.status(error.status).json(error.response);
             }

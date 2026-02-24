@@ -79,6 +79,9 @@ export class AuthRateLimitService {
     }
 
     async getActiveBlockTtl(identifier?: string | null, ip?: string | null): Promise<number> {
+        console.log("identifier", identifier);
+        console.log("ip", ip);
+
         if (!identifier) {
             return 0;
         }

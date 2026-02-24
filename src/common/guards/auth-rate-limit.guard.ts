@@ -14,7 +14,7 @@ export class AuthRateLimitGuard implements CanActivate {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const req = context.switchToHttp().getRequest();
-        const body = decryptData(req.body?.data);
+        const body = req.body;
 
         const authMethod = body?.auth_method;
         const ip = req.ip;

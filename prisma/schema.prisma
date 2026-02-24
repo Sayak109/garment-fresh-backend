@@ -33,6 +33,7 @@ enum RoleName {
     OWNER
     ADMIN
     OPERATOR
+    CUSTOMER
 }
 
 enum Status {

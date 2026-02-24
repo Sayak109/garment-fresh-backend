@@ -167,7 +167,7 @@ export class AuthService {
                             auth_method === 'GOOGLE' || auth_method === 'APPLE'
                                 ? await hashPassword(provider_id)
                                 : null,
-                        role_id: BigInt(2),
+                        role_id: BigInt(4),
                     },
                     select: {
                         id: true,
@@ -309,7 +309,9 @@ export class AuthService {
 
     async refreshTokens(refreshToken: RefreshTokenDto): Promise<Tokens> {
         try {
-            const refreshHash = CryptoUtil.hash(decryptData(refreshToken));
+            console.log("refresh", refreshToken);
+
+            const refreshHash = CryptoUtil.hash(decryptData(refreshToken.token));
 
             const session = await this.prisma.userSession.findFirst({
                 where: {

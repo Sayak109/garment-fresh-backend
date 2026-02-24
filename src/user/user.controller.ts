@@ -29,7 +29,7 @@ export class UserController {
       let result = JSON.stringify(userData, (key, value) =>
         typeof value === 'bigint' ? value.toString() : value,
       );
-      const resData = encryptData(new ApiResponse((JSON.parse(result)), "Fetched user data"));
+      const resData = new ApiResponse((JSON.parse(result)), "Fetched user data");
       return res.status(HttpStatus.OK).json({ data: resData });
     } catch (error: any) {
       if (error.status && error.response) {
